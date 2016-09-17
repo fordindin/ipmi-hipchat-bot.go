@@ -166,3 +166,16 @@ func Test_addAlias_updateAlias(t *testing.T) {
 	closeDB()
 	os.Remove(_dbaddr)
 }
+
+func Test_execCommand(t *testing.T) {
+	trace()
+	input := "some input"
+	ret := execCommand("echo", input)
+	if ret.output != input+"\n" {
+		t.Error("Input and Output are different")
+	}
+	if ret.err != nil {
+		t.Error("Command completed with error")
+	}
+	//t.Error("DB shouldn't be <nil> after initialization")
+}
