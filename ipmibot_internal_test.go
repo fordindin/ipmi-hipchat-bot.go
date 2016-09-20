@@ -1,4 +1,4 @@
-package ipmibot
+package main
 
 import (
 	"fmt"
