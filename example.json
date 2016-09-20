@@ -1,0 +1,35 @@
+{
+    "event": "room_message",
+    "item": {
+        "message": {
+            "date": "2016-09-06T21:53:37.420887+00:00",
+            "from": {
+                    "id": 14,
+                    "links": {
+                        "self": "https://hipchat.argotech.io/v2/user/14"
+                    },
+                    "mention_name": "DenisBarov",
+                    "name": "Denis Barov",
+                    "version": "BC5D9325"
+            },
+            "id": "f9f17833-9acd-48c8-9315-422e1b31e446",
+            "mentions": [],
+            "message": "/chassis some params here",
+            "type": "message"
+        },
+    "room": {
+        "id": 8,
+        "is_archived": false,
+        "links": {
+            "participants": "https://hipchat.argotech.io/v2/room/8/participant",
+            "self": "https://hipchat.argotech.io/v2/room/8",
+            "webhooks": "https://hipchat.argotech.io/v2/room/8/webhook"
+        },
+        "name": "Lab Stuff",
+        "privacy": "public",
+        "version": "XHEAE44M"
+        }
+    },
+    "oauth_client_id": "40fdb3b6-bba9-4683-9946-67e3443beea6",
+    "webhook_id": 11
+}
