@@ -3,9 +3,11 @@ package main
 import (
 	"io"
 	"io/ioutil"
-	//"log"
+	"log"
 	"net/http"
 )
+
+var port int = 8000
 
 func ipmi(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -29,9 +31,10 @@ var mux map[string]func(http.ResponseWriter, *http.Request)
 
 func main() {
 	server := http.Server{
-		Addr:    ":8000",
+		Addr:    port,
 		Handler: &myHandler{},
 	}
+	log.Println("Server listening on port", port)
 
 	mux = make(map[string]func(http.ResponseWriter, *http.Request))
 	mux["/ipmi"] = ipmi
