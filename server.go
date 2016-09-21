@@ -31,15 +31,15 @@ var mux map[string]func(http.ResponseWriter, *http.Request)
 
 func main() {
 	server := http.Server{
-		Addr:    string(port),
+		Addr:    fmt.Sprintf("%d", port),
 		Handler: &myHandler{},
 	}
-	log.Println("Server listening on port", port)
 
 	mux = make(map[string]func(http.ResponseWriter, *http.Request))
 	mux["/ipmi"] = ipmi
 
 	server.ListenAndServe()
+	log.Println("Server listening on port", port)
 }
 
 type myHandler struct{}
