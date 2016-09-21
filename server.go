@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-var address string = ":"
+var address string = ""
 var port int = 8000
 
 func ipmi(w http.ResponseWriter, r *http.Request) {
