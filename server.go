@@ -13,7 +13,7 @@ func ipmi(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	data := parseInputJson(body)
 	_, _ = err, data
-	out := IpmiExec(node, command)
+	out := IpmiExec(data.node, data.command)
 	io.WriteString(w, jsonFormatReply("green", out.result.output))
 }
 
