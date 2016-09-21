@@ -50,10 +50,24 @@ func parseInputJson(data []byte) hipchatMessage {
 
 	args := strings.Split(m2.(string), " ")
 
-	out.node = args[0]
-	out.command = args[1]
-	out.args = args[2:]
-	out.name = name.(string)
+	switch {
+	case len(args) == 0: //should never happen
+	case len(args) == 1:
+		out.node = args[0]
+		out.name = name.(string)
+		out.command = ""
+		out.args = make([]string, 0)
+	case len(args) == 2:
+		out.node = args[0]
+		out.name = name.(string)
+		out.command = args[1]
+		out.args = make([]string, 0)
+	case len(args) > 2:
+		out.node = args[0]
+		out.name = name.(string)
+		out.command = args[1]
+		out.args = args[2:]
+	}
 
 	return out
 }
