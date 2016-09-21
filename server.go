@@ -17,16 +17,24 @@ func ipmi(w http.ResponseWriter, r *http.Request) {
 	data := parseInputJson(body)
 	_, _ = err, data
 	var output string
+	var color string = "green"
 	switch data.command {
 	case "help":
 		output = help(data.args)
+		color = "blue"
 	case "reboot", "on", "off", "lanboot", "status":
-		out := IpmiExec(data.node, data.command)
-		output = out.result.output
+		log.Println(data.node)
+		if len(data.args) == 0 || data.args[0] == "" {
+			output = help([]string{data.command})
+			color = "purple"
+		} else {
+			out := IpmiExec(data.args[0], data.command)
+			output = out.result.output
+		}
 	case "alias":
-
-		io.WriteString(w, jsonFormatReply("green", output))
 	}
+
+	io.WriteString(w, jsonFormatReply(color, output))
 }
 
 var mux map[string]func(http.ResponseWriter, *http.Request)
@@ -71,12 +79,13 @@ func help(args []string) string {
 
 	topics := map[string]string{
 		"help":    "Shows help messages, for detailed help by topics type /ipmi help <topic>",
-		"reboot":  "/ipmi reboot <ip or alias>\nReboots host by ip-address or alias",
-		"off":     "/ipmi off <ip or alias>\nSwitches off power for host by ip-address or alias",
-		"on":      "/ipmi on <ip or alias>\nTurns on host with ip-address or alias",
-		"lanboot": "/ipmi lanboot <ip or alias>\nSets network boot for host or alias and reboots it",
-		"status":  "/ipmi status <ip or alias>\nShows current chassis power status for host or alias",
-		"alias": `/ipmi alias [ - | add | del | show ] [<alias name>] [<ip address>]
+		"reboot":  "Usage:\n/ipmi reboot <ip or alias>\nReboots host by ip-address or alias",
+		"off":     "Usage:\n/ipmi off <ip or alias>\nSwitches off power for host by ip-address or alias",
+		"on":      "Usage:\n/ipmi on <ip or alias>\nTurns on host with ip-address or alias",
+		"lanboot": "Usage:\n/ipmi lanboot <ip or alias>\nSets network boot for host or alias and reboots it",
+		"status":  "Usage:\n/ipmi status <ip or alias>\nShows current chassis power status for host or alias",
+		"alias": `/Usage:
+ipmi alias [ - | add | del | show ] [<alias name>] [<ip address>]
 
 /ipmi alias
 Shows list of aliases for current user

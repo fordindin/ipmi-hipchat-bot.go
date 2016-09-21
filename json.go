@@ -68,6 +68,5 @@ func parseInputJson(data []byte) hipchatMessage {
 		out.command = args[1]
 		out.args = args[2:]
 	}
-
 	return out
 }
