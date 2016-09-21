@@ -38,7 +38,6 @@ func main() {
 	} else {
 		addr = fmt.Sprintf("%d", port)
 	}
-
 	server := http.Server{
 		Addr:    addr,
 		Handler: &myHandler{},
