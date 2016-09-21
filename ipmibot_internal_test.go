@@ -271,7 +271,7 @@ func Test_parseInputJson(t *testing.T) {
 		out.args[0] != "params" ||
 		out.args[1] != "here" {
 		_testsFailed += 1
-		t.Error("Wrong field values in resulting json")
+		t.Error("Wrong field values in resulting json", out)
 	}
 	//fmt.Println(out)
 	_testsPassed += 1
