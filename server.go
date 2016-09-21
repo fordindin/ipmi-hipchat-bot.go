@@ -8,6 +8,7 @@ import (
 	"net/http"
 )
 
+var address string = ""
 var port int = 8000
 
 func ipmi(w http.ResponseWriter, r *http.Request) {
@@ -31,8 +32,14 @@ func ipmi(w http.ResponseWriter, r *http.Request) {
 var mux map[string]func(http.ResponseWriter, *http.Request)
 
 func main() {
+	if addr != "" {
+		addr := fmt.Sprintf("%s:%d", address, port)
+	} else {
+		addr := fmt.Sprintf("%d", port)
+	}
+
 	server := http.Server{
-		Addr:    fmt.Sprintf("%d", port),
+		Addr:    addr,
 		Handler: &myHandler{},
 	}
 
@@ -40,7 +47,7 @@ func main() {
 	mux["/ipmi"] = ipmi
 
 	server.ListenAndServe()
-	log.Println("Server listening on port", port)
+	log.Println("Server listening on address", addr)
 }
 
 type myHandler struct{}
