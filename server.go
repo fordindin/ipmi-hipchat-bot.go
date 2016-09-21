@@ -31,7 +31,7 @@ var mux map[string]func(http.ResponseWriter, *http.Request)
 
 func main() {
 	server := http.Server{
-		Addr:    port,
+		Addr:    string(port),
 		Handler: &myHandler{},
 	}
 	log.Println("Server listening on port", port)
