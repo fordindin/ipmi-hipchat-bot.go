@@ -2,18 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 )
-
-/*
-{
-    "color": "green",
-    "message": "It's going to be sunny tomorrow! (yey)",
-    "notify": false,
-    "message_format": "text"
-}
-*/
 
 func jsonFormatReply(color string, text string) string {
 	mapD := make(map[string]interface{})
@@ -23,13 +15,6 @@ func jsonFormatReply(color string, text string) string {
 	mapD["message"] = text
 	data, _ := json.Marshal(mapD)
 	return string(data)
-}
-
-type hipchatMessage struct {
-	node    string
-	name    string
-	command string
-	args    []string
 }
 
 func parseInputJson(data []byte) hipchatMessage {
@@ -68,5 +53,6 @@ func parseInputJson(data []byte) hipchatMessage {
 		out.command = args[1]
 		out.args = args[2:]
 	}
+	out.chatstring = fmt.Sprintf("%s %s %s", out.node, out.command, strings.Join(out.args, " "))
 	return out
 }
