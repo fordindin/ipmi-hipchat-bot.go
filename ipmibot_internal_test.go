@@ -23,9 +23,11 @@ var _jdata = []byte(`{
 		"message_format": "text"
 }`)
 
+var _dbaddr string
+
 var _ = json.Unmarshal(_jdata, &_jsonOut)
 
-var _jsonData = []byte(`{
+var _jsonDataTemplate = `{
     "event": "room_message",
     "item": {
         "message": {
@@ -35,13 +37,13 @@ var _jsonData = []byte(`{
                     "links": {
                         "self": "https://hipchat.argotech.io/v2/user/14"
                     },
-                    "mention_name": "DenisBarov",
+                    "mention_name": "TestUser",
                     "name": "Denis Barov",
                     "version": "BC5D9325"
             },
             "id": "f9f17833-9acd-48c8-9315-422e1b31e446",
             "mentions": [],
-            "message": "/chassis some params here",
+            "message": "%s",
             "type": "message"
         },
     "room": {
@@ -59,7 +61,7 @@ var _jsonData = []byte(`{
     },
     "oauth_client_id": "40fdb3b6-bba9-4683-9946-67e3443beea6",
     "webhook_id": 11
-}`)
+}`
 
 var logEntry = dbLogEntry{
 	caller:        "caller",
@@ -174,8 +176,8 @@ func Test_logDB_lastFromDB_single(t *testing.T) {
 	entries[0].systemerror = logEntry.systemerror
 	if entries[0] != logEntry ||
 		fmt.Sprintf("%s", e1err) != fmt.Sprintf("%s", e2err) {
-		fmt.Println(entries[0])
-		fmt.Println(logEntry)
+		//fmt.Println(entries[0])
+		//fmt.Println(logEntry)
 		_testsFailed += 1
 		t.Error("Written log entry doesn't match")
 	}
@@ -267,10 +269,12 @@ func Test_IpmiExec(t *testing.T) {
 
 func Test_parseInputJson(t *testing.T) {
 	trace()
-	out := parseInputJson(_jsonData)
+	s := "/ipmi some params here"
+	_jsonData := fmt.Sprintf(_jsonDataTemplate, s)
+	out := parseInputJson([]byte(_jsonData))
 	_ = out
-	if out.node != "/chassis" ||
-		out.name != "DenisBarov" ||
+	if out.node != "/ipmi" ||
+		out.name != "TestUser" ||
 		out.command != "some" ||
 		out.args[0] != "params" ||
 		out.args[1] != "here" {
@@ -322,7 +326,108 @@ func Test_mkDbAliasEntry_badAlias(t *testing.T) {
 	}
 }
 
+func Test_processIpmi_alias(t *testing.T) {
+	trace()
+	initDB()
+	exemplaryJsonStr := `{"color":"green","message":"Aliases for you:\n","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias"))
+	out := processIpmi(j)
+	if out != exemplaryJsonStr {
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+	closeDB()
+	os.Remove(dbaddr)
+}
+
+func Test_processIpmi_alias_add_bad_ip(t *testing.T) {
+	trace()
+	initDB()
+	exemplaryJsonStr := `{"color":"red","message":"'notAnIPAddress' doesn't look like IP-address to me\n","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test notAnIPAddress"))
+	out := processIpmi(j)
+	if out != exemplaryJsonStr {
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+	closeDB()
+	os.Remove(dbaddr)
+}
+func Test_processIpmi_alias_add(t *testing.T) {
+	trace()
+	initDB()
+	exemplaryJsonStr := `{"color":"green","message":"'test' is an alias for 127.0.0.1 (owner TestUser)","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test 127.0.0.1"))
+	out := processIpmi(j)
+	if out != exemplaryJsonStr {
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+	closeDB()
+	os.Remove(dbaddr)
+}
+
+func Test_processIpmi_alias_add_multi_than_list(t *testing.T) {
+	trace()
+	initDB()
+	exemplaryJsonStr := `{"color":"green","message":"Aliases for you:\n'test' is an alias for 127.0.0.1 (owner TestUser)\n'test2' is an alias for 10.0.0.1 (owner TestUser)\n'test3' is an alias for 172.16.0.1 (owner TestUser)\n","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test 127.0.0.1"))
+	out := processIpmi(j)
+	j = []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test2 10.0.0.1"))
+	out = processIpmi(j)
+	j = []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test3 172.16.0.1"))
+	out = processIpmi(j)
+	j = []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias"))
+	out = processIpmi(j)
+	if out != exemplaryJsonStr {
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+	//closeDB()
+	//os.Remove(dbaddr)
+	_dbaddr = dbaddr
+}
+
+func Test_processIpmi_alias_show_nonexistent(t *testing.T) {
+	trace()
+	exemplaryJsonStr := `{"color":"red","message":"There is no alias 'test5' for TestUser\n","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias show test5"))
+	out := processIpmi(j)
+	if out != exemplaryJsonStr {
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+}
+
+func Test_processIpmi_alias_show(t *testing.T) {
+	trace()
+	exemplaryJsonStr := `{"color":"green","message":"'test2' is an alias for 10.0.0.1 (owner TestUser)","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias show test2"))
+	out := processIpmi(j)
+	if out != exemplaryJsonStr {
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+}
+
+func Test_processIpmi_alias_del(t *testing.T) {
+	trace()
+	exemplaryJsonStr := `{"color":"green","message":"Alias 'test2' removed (owner  TestUser)","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias del test2"))
+	out := processIpmi(j)
+	if out != exemplaryJsonStr {
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+}
+
+func Test_processIpmi_alias_del_nonexistent(t *testing.T) {
+	trace()
+	exemplaryJsonStr := `{"color":"red","message":"There is no alias 'test7' for TestUser\n","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias del test7"))
+	out := processIpmi(j)
+	//fmt.Println(out)
+	if out != exemplaryJsonStr {
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+}
+
 func Test_stat(t *testing.T) {
+	closeDB()
+	os.Remove(_dbaddr)
 	/*
 			stat := fmt.Sprintf(`
 				Tests total:	%d
