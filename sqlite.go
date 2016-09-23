@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
@@ -10,25 +11,7 @@ import (
 	//"os"
 )
 
-type dbLogEntry struct {
-	timestamp     int
-	caller        string
-	chatstring    string
-	chatout       string
-	systemcommand string
-	systemout     string
-	systemerror   int
-}
-
-type dbAliasEntry struct {
-	name  string
-	owner string
-	host  string
-}
-
-var dbaddr string = "./ipmibot.sqlite3"
 var DB *sql.DB = nil
-var dbversion = 0
 
 func typeOf(in interface{}) {
 	fmt.Println(reflect.TypeOf(in))
@@ -46,7 +29,7 @@ func initDB() error {
 	case -1:
 		createDB()
 	case dbversion:
-		log.Println("Database version match")
+		log.Println("Database version: ", dbversion)
 	default:
 		log.Fatal("Database version mismatch, upgrade required")
 	}
@@ -78,7 +61,7 @@ func createDB() error {
 				chatout string not null,
 				systemcommand string,
 				systemout string,
-				systemerror int );`
+				systemerror string );`
 	createTableHostaliases := `
 		create table hostaliases (
 				name string not null primary key,
@@ -116,18 +99,11 @@ func createDB() error {
 	return err
 }
 
-/*
- timestamp
- caller
- chatstring
- chatout
- systemcommand
- systemout
- systemerror
-
-*/
-
 func logToDB(logEntry dbLogEntry) {
+	tx, err := DB.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
 	statement, err := DB.Prepare(`
 					insert into log(
 					timestamp,
@@ -137,6 +113,11 @@ func logToDB(logEntry dbLogEntry) {
 					systemcommand,
 					systemout,
 					systemerror) values (?, ?, ?, ?, ?, ?, ?);`)
+	defer statement.Close()
+	syserr := ""
+	if logEntry.systemerror != nil {
+		syserr = fmt.Sprintf("%s", logEntry.systemerror)
+	}
 	statement.Exec(
 		int32(time.Now().Unix()),
 		logEntry.caller,
@@ -144,10 +125,11 @@ func logToDB(logEntry dbLogEntry) {
 		logEntry.chatout,
 		logEntry.systemcommand,
 		logEntry.systemout,
-		logEntry.systemerror)
+		syserr)
 	if err != nil {
 		log.Printf("%q: %s\n", err, statement)
 	}
+	tx.Commit()
 }
 
 func lastFromDB(params ...int) []dbLogEntry {
@@ -157,6 +139,7 @@ func lastFromDB(params ...int) []dbLogEntry {
 	}
 	statement := fmt.Sprintf("select * from log order by timestamp desc limit %d", nentries)
 	rows, err := DB.Query(statement)
+	defer rows.Close()
 	if err != nil {
 		log.Printf("%q: %s\n", err, statement)
 	}
@@ -168,7 +151,7 @@ func lastFromDB(params ...int) []dbLogEntry {
 		var chatout string
 		var systemcommand string
 		var systemout string
-		var systemerror int
+		var systemerror string
 		rows.Scan(&timestamp, &caller, &chatstring, &chatout, &systemcommand, &systemout, &systemerror)
 		e := dbLogEntry{
 			timestamp:     timestamp,
@@ -177,7 +160,7 @@ func lastFromDB(params ...int) []dbLogEntry {
 			chatout:       chatout,
 			systemcommand: systemcommand,
 			systemout:     systemout,
-			systemerror:   systemerror,
+			systemerror:   errors.New(systemerror),
 		}
 		entries = append(entries, e)
 	}
@@ -198,6 +181,7 @@ func addAlias(alias dbAliasEntry) {
 
 func delAlias(alias dbAliasEntry) {
 	statement, err := DB.Prepare("delete from hostaliases where name='?' and owner='?'")
+	defer statement.Close()
 	statement.Exec(alias.name, alias.owner)
 	if err != nil {
 		log.Printf("%q: %s\n", err, statement)
@@ -206,8 +190,14 @@ func delAlias(alias dbAliasEntry) {
 
 func showAlias(alias dbAliasEntry) []dbAliasEntry {
 	var entries []dbAliasEntry
-	statement := fmt.Sprintf("select * from hostaliases where name='%s' and owner='%s'", alias.name, alias.owner)
+	var statement string
+	if alias.name != "" {
+		statement = fmt.Sprintf("select * from hostaliases where name='%s' and owner='%s'", alias.name, alias.owner)
+	} else {
+		statement = fmt.Sprintf("select * from hostaliases where owner='%s'", alias.owner)
+	}
 	rows, err := DB.Query(statement)
+	defer rows.Close()
 	if err != nil {
 		log.Printf("%q: %s\n", err, statement)
 		return entries
@@ -245,92 +235,3 @@ func updateAlias(alias dbAliasEntry) {
 		//shouldn't happen
 	}
 }
-
-/*
-		sqlStmt := `
-	    create table foo (id integer not null primary key, name text);
-	    delete from foo;
-	    `
-		_, err = db.Exec(sqlStmt)
-		if err != nil {
-			log.Printf("%q: %s\n", err, sqlStmt)
-			return
-		}
-
-		tx, err := db.Begin()
-		if err != nil {
-			log.Fatal(err)
-		}
-		stmt, err := tx.Prepare("insert into foo(id, name) values(?, ?)")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer stmt.Close()
-		for i := 0; i < 100; i++ {
-			_, err = stmt.Exec(i, fmt.Sprintf("こんにちわ世界%03d", i))
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-		tx.Commit()
-
-		rows, err := db.Query("select id, name from foo")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var id int
-			var name string
-			err = rows.Scan(&id, &name)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Println(id, name)
-		}
-		err = rows.Err()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		stmt, err = db.Prepare("select name from foo where id = ?")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer stmt.Close()
-		var name string
-		err = stmt.QueryRow("3").Scan(&name)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(name)
-
-		_, err = db.Exec("delete from foo")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		_, err = db.Exec("insert into foo(id, name) values(1, 'foo'), (2, 'bar'), (3, 'baz')")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		rows, err = db.Query("select id, name from foo")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var id int
-			var name string
-			err = rows.Scan(&id, &name)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Println(id, name)
-		}
-		err = rows.Err()
-		if err != nil {
-			log.Fatal(err)
-		}
-*/
