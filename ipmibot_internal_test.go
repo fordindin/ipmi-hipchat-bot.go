@@ -5,12 +5,12 @@ import (
 	"os"
 	//"reflect"
 	"encoding/json"
+	"errors"
 	"path"
 	"runtime"
 	"testing"
 )
 
-var _dbaddr string = "file.sqlite3"
 var _testsPassed = 0
 var _testsFailed = 0
 var _testsTotal = 0
@@ -67,7 +67,7 @@ var logEntry = dbLogEntry{
 	chatout:       "return",
 	systemcommand: "ls -al",
 	systemout:     "..",
-	systemerror:   0}
+	systemerror:   errors.New("Some Error")}
 
 var aliasEntry = dbAliasEntry{
 	name:  "testing",
@@ -75,18 +75,24 @@ var aliasEntry = dbAliasEntry{
 	host:  "127.0.0.1",
 }
 
-func trace() {
+var badAliasEntry = dbAliasEntry{
+	name:  "testing",
+	owner: "dindin",
+	host:  "not an IP address",
+}
+
+func trace() string {
 	pc := make([]uintptr, 10) // at least 1 entry needed
 	runtime.Callers(2, pc)
 	f := runtime.FuncForPC(pc[0])
 	file, line := f.FileLine(pc[1])
 	fmt.Printf("\t%s:%d %s\n", path.Base(file), line, path.Base(f.Name()))
 	_testsTotal += 1
+	return path.Base(fmt.Sprintf("%s.sqlite", path.Base(f.Name())))
 }
 
 func Test_initDB(t *testing.T) {
-	trace()
-	dbaddr = _dbaddr
+	dbaddr = trace()
 	if DB != nil {
 		_testsFailed += 1
 		t.Error("DB should is not <nil> before initialization")
@@ -96,35 +102,32 @@ func Test_initDB(t *testing.T) {
 		_testsFailed += 1
 		t.Error("DB shouldn't be <nil> after initialization")
 	}
-	os.Remove(_dbaddr)
+	os.Remove(dbaddr)
 	//fmt.Println(reflect.TypeOf(DB))
 	_testsPassed += 1
 }
 
 func Test_closeDB(t *testing.T) {
-	trace()
-	dbaddr = _dbaddr
+	dbaddr = trace()
 	initDB()
 	closeDB()
 	//fmt.Println(reflect.TypeOf(DB))
-	os.Remove(_dbaddr)
+	os.Remove(dbaddr)
 	_testsPassed += 1
 }
 
 func Test_createDB(t *testing.T) {
-	trace()
-	dbaddr = _dbaddr
+	dbaddr = trace()
 	initDB()
 	//err = createDB()
 	closeDB()
 	//_ = err
-	os.Remove(_dbaddr)
+	os.Remove(dbaddr)
 	_testsPassed += 1
 }
 
 func Test_verifyDB(t *testing.T) {
-	trace()
-	dbaddr = _dbaddr
+	dbaddr = trace()
 	dbversion = 65535
 	initDB()
 	//err := createDB()
@@ -136,7 +139,7 @@ func Test_verifyDB(t *testing.T) {
 	closeDB()
 	//_ = err
 	_ = ver
-	os.Remove(_dbaddr)
+	os.Remove(dbaddr)
 	_testsPassed += 1
 }
 
@@ -159,29 +162,31 @@ func Test_verifyDB_nonexistent(t *testing.T) {
 */
 
 func Test_logDB_lastFromDB_single(t *testing.T) {
-	trace()
-	dbaddr = _dbaddr
+	dbaddr = trace()
 	initDB()
 	//err := createDB()
 	//_ = err
 	logToDB(logEntry)
 	entries := lastFromDB()
 	entries[0].timestamp = 0
-	if entries[0] != logEntry {
+	e1err := logEntry.systemerror
+	e2err := entries[0].systemerror
+	entries[0].systemerror = logEntry.systemerror
+	if entries[0] != logEntry ||
+		fmt.Sprintf("%s", e1err) != fmt.Sprintf("%s", e2err) {
 		fmt.Println(entries[0])
 		fmt.Println(logEntry)
 		_testsFailed += 1
 		t.Error("Written log entry doesn't match")
 	}
 	closeDB()
-	os.Remove(_dbaddr)
+	os.Remove(dbaddr)
 	_testsPassed += 1
 }
 
 func Test_logDB_lastFromDB_many(t *testing.T) {
-	trace()
+	dbaddr = trace()
 	nentries := 20
-	dbaddr = _dbaddr
 	initDB()
 	//err := createDB()
 	//_ = err
@@ -194,13 +199,12 @@ func Test_logDB_lastFromDB_many(t *testing.T) {
 		t.Error("Requested number of entries doesn't match")
 	}
 	closeDB()
-	os.Remove(_dbaddr)
+	os.Remove(dbaddr)
 	_testsPassed += 1
 }
 
 func Test_addAlias_showAlias(t *testing.T) {
-	trace()
-	dbaddr = _dbaddr
+	dbaddr = trace()
 	initDB()
 	//err := createDB()
 	//_ = err
@@ -211,26 +215,27 @@ func Test_addAlias_showAlias(t *testing.T) {
 		t.Error("Created alias doesn't match template")
 	}
 	closeDB()
-	os.Remove(_dbaddr)
+	os.Remove(dbaddr)
 	_testsPassed += 1
 }
 
 func Test_addAlias_updateAlias(t *testing.T) {
-	trace()
-	dbaddr = _dbaddr
+	dbaddr = trace()
 	initDB()
 	//err := createDB()
 	//_ = err
-	addAlias(aliasEntry)
-	aliasEntry.host = "10.0.0.1"
-	updateAlias(aliasEntry)
-	aliases := showAlias(aliasEntry)
-	if aliases[0] != aliasEntry {
+	var e dbAliasEntry
+	*(&e) = *(&aliasEntry)
+	addAlias(e)
+	e.host = "10.0.0.1"
+	updateAlias(e)
+	aliases := showAlias(e)
+	if aliases[0] != e {
 		_testsFailed += 1
 		t.Error("Created alias doesn't match template")
 	}
 	closeDB()
-	os.Remove(_dbaddr)
+	os.Remove(dbaddr)
 	_testsPassed += 1
 }
 
@@ -252,11 +257,10 @@ func Test_execCommand(t *testing.T) {
 
 func Test_IpmiExec(t *testing.T) {
 	trace()
-	if false {
-		var x ipmiExecResult
-		x = IpmiExec("10.20.30.13", "on")
-		fmt.Println(x.command)
-		fmt.Println(x.result.output)
+	if true {
+		var x = IpmiExec("10.20.30.13", "status")
+		fmt.Printf("\n\tCommand:   %s\n", x.commandstring)
+		fmt.Printf("\tOutput:    %s\n", x.output)
 	}
 	_testsPassed += 1
 }
@@ -284,6 +288,37 @@ func Test_jsonFormatReply(t *testing.T) {
 	if r != string(o) {
 		_testsFailed += 1
 		t.Error("Resulting json doesn't match with exemplary one")
+	}
+}
+
+func Test_aliasToString(t *testing.T) {
+	trace()
+	e := aliasEntry
+	var exemplaryAliasString = fmt.Sprintf("'%s' is an alias for %s (owner %s)", e.name, e.host, e.owner)
+	if exemplaryAliasString != aliasToString(e) {
+		t.Error("Resulting alias entry doesn't match exemplary one")
+	}
+}
+
+func Test_mkDbAliasEntry(t *testing.T) {
+	trace()
+	e := aliasEntry
+	r := mkDbAliasEntry(e.name, e.owner, e.host)
+	if r == nil {
+		t.Error("Resulting alias pointer shouldn't be nil")
+	} else {
+		ref := *r
+		if aliasEntry != ref {
+			t.Error("Resulting alias entry doesn't match exemplary one")
+		}
+	}
+}
+
+func Test_mkDbAliasEntry_badAlias(t *testing.T) {
+	trace()
+	e := badAliasEntry
+	if nil != mkDbAliasEntry(e.name, e.owner, e.host) {
+		t.Error("Resulting alias entry should be <nil>")
 	}
 }
 
