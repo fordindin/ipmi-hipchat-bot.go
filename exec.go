@@ -1,22 +1,19 @@
 package main
 
 import (
-	//"fmt"
+	"fmt"
 	//"log"
 	"os/exec"
+	"strings"
 )
-
-type execReturn struct {
-	output string
-	err    error
-}
 
 func execCommand(command string, args ...string) execReturn {
 	cmd := exec.Command(command, args...)
 	err := cmd.Wait()
 	stdout, err := cmd.CombinedOutput()
 	return execReturn{
-		output: string(stdout),
-		err:    err,
+		commandstring: fmt.Sprintf("%s %s", command, strings.Join(args, " ")),
+		output:        string(stdout),
+		err:           err,
 	}
 }
