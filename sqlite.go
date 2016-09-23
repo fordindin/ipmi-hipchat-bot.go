@@ -180,9 +180,8 @@ func addAlias(alias dbAliasEntry) {
 }
 
 func delAlias(alias dbAliasEntry) {
-	statement, err := DB.Prepare("delete from hostaliases where name='?' and owner='?'")
-	defer statement.Close()
-	statement.Exec(alias.name, alias.owner)
+	statement := fmt.Sprintf("delete from hostaliases where name='%s' and owner='%s';", alias.name, alias.owner)
+	_, err := DB.Exec(statement)
 	if err != nil {
 		log.Printf("%q: %s\n", err, statement)
 	}
