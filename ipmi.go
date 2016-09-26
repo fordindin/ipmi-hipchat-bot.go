@@ -1,13 +1,15 @@
 package main
 
-func IpmiExec(host string, command string) execReturn {
-	var ret execReturn
+func IpmiExec(host string, command string) []execReturn {
+	var ret []execReturn
 	var cmdArray []string
 	cmdArray = append(cmdArray,
 		"-U", ipmiUserame,
 		"-P", ipmiPassword,
 		"-H", host)
-	cmdArray = append(cmdArray, commands[command]...)
-	ret = execCommand(ipmitool, cmdArray...)
+	for _, c := range commands[command] {
+		cArray := append(cmdArray, c...)
+		ret = append(ret, execCommand(ipmitool, cArray...))
+	}
 	return ret
 }
