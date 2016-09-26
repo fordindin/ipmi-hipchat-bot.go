@@ -12,6 +12,7 @@ func processIpmi(body []byte) string {
 	var output string
 	var color string = "green"
 	var out []execReturn
+	output = fmt.Sprintf("@%s,\n", data.name)
 
 	//log.Printf("Command %s received from %s\n", data.command, data.name)
 	switch data.command {
