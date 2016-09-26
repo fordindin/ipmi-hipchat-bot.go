@@ -234,3 +234,13 @@ func updateAlias(alias dbAliasEntry) {
 		//shouldn't happen
 	}
 }
+
+func unwrapAlias(alias string, owner string) string {
+	entry := mkDbAliasEntry(alias, owner, "0.0.0.0")
+	es := showAlias(*entry)
+	if len(es) == 0 {
+		return alias
+	} else {
+		return es[0].host
+	}
+}
