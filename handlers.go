@@ -25,9 +25,8 @@ func processIpmi(body []byte) string {
 		case len(data.args) == 0:
 			output = help([]string{data.command})
 			color = "purple"
-		case data.args[1] == "lanboot":
 		default:
-			out = IpmiExec(data.args[0], data.command)
+			out = IpmiExec(unwrapAlias(data.args[0], data.name), data.command)
 			for _, o := range out {
 				output += o.output
 			}
