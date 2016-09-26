@@ -250,10 +250,26 @@ func Test_execCommand(t *testing.T) {
 
 func Test_IpmiExec(t *testing.T) {
 	trace()
-	if true {
-		var x = IpmiExec("10.20.30.13", "status")
-		fmt.Printf("\n\tCommand:   %s\n", x.commandstring)
-		fmt.Printf("\tOutput:    %s\n", x.output)
+	var x = IpmiExec("10.20.30.13", "status")
+	fmt.Printf("\n\tCommand:   %s\n", x[0].commandstring)
+	fmt.Printf("\tOutput:    %s\n", x[0].output)
+	_testsPassed += 1
+}
+
+func Test_IpmiExec_multi(t *testing.T) {
+	trace()
+	commands["testcommand"] = [][]string{
+		[]string{"chassis", "power", "status"},
+		[]string{"chassis", "power", "status"},
+	}
+	var x = IpmiExec("10.20.30.13", "testcommand")
+	if len(x) != 2 {
+		t.Error("There should be at least two returns in this command")
+	} else {
+		for _, o := range x {
+			fmt.Printf("\n\tCommand:   %s\n", o.commandstring)
+			fmt.Printf("\tOutput:    %s\n", o.output)
+		}
 	}
 	_testsPassed += 1
 }
