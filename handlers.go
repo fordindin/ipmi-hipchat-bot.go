@@ -25,7 +25,7 @@ func processIpmi(body []byte) string {
 			output = help([]string{data.command})
 			color = "purple"
 		default:
-			out = IpmiExec(unwrapAlias(data.args[0]), data.command)
+			out = IpmiExec(unwrapAlias(data.args[0], data.name), data.command)
 			for _, o := range out {
 				output += o.output
 			}
