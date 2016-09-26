@@ -106,7 +106,6 @@ func Test_initDB(t *testing.T) {
 	}
 	os.Remove(dbaddr)
 	//fmt.Println(reflect.TypeOf(DB))
-	_testsPassed += 1
 }
 
 func Test_closeDB(t *testing.T) {
@@ -115,7 +114,6 @@ func Test_closeDB(t *testing.T) {
 	closeDB()
 	//fmt.Println(reflect.TypeOf(DB))
 	os.Remove(dbaddr)
-	_testsPassed += 1
 }
 
 func Test_createDB(t *testing.T) {
@@ -125,7 +123,6 @@ func Test_createDB(t *testing.T) {
 	closeDB()
 	//_ = err
 	os.Remove(dbaddr)
-	_testsPassed += 1
 }
 
 func Test_verifyDB(t *testing.T) {
@@ -142,26 +139,20 @@ func Test_verifyDB(t *testing.T) {
 	//_ = err
 	_ = ver
 	os.Remove(dbaddr)
-	_testsPassed += 1
 }
 
-/*
 func Test_verifyDB_nonexistent(t *testing.T) {
-	trace()
-	dbaddr = _dbaddr
-	initDB()
+	dbaddr = trace()
+	//initDB()
 	//err := createDB()
 	ver := verifyDB()
 	if ver != -1 {
+		_testsFailed += 1
 		t.Error("Reporting version for nonexistent DB")
 	}
-	closeDB()
 	//_ = err
 	_ = ver
-	os.Remove(_dbaddr)
-	_testsPassed += 1
 }
-*/
 
 func Test_logDB_lastFromDB_single(t *testing.T) {
 	dbaddr = trace()
@@ -300,6 +291,7 @@ func Test_aliasToString(t *testing.T) {
 	e := aliasEntry
 	var exemplaryAliasString = fmt.Sprintf("'%s' is an alias for %s (owner %s)", e.name, e.host, e.owner)
 	if exemplaryAliasString != aliasToString(e) {
+		_testsFailed += 1
 		t.Error("Resulting alias entry doesn't match exemplary one")
 	}
 }
@@ -309,10 +301,12 @@ func Test_mkDbAliasEntry(t *testing.T) {
 	e := aliasEntry
 	r := mkDbAliasEntry(e.name, e.owner, e.host)
 	if r == nil {
+		_testsFailed += 1
 		t.Error("Resulting alias pointer shouldn't be nil")
 	} else {
 		ref := *r
 		if aliasEntry != ref {
+			_testsFailed += 1
 			t.Error("Resulting alias entry doesn't match exemplary one")
 		}
 	}
@@ -322,6 +316,7 @@ func Test_mkDbAliasEntry_badAlias(t *testing.T) {
 	trace()
 	e := badAliasEntry
 	if nil != mkDbAliasEntry(e.name, e.owner, e.host) {
+		_testsFailed += 1
 		t.Error("Resulting alias entry should be <nil>")
 	}
 }
@@ -333,6 +328,7 @@ func Test_processIpmi_alias(t *testing.T) {
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
+		_testsFailed += 1
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 	closeDB()
@@ -346,6 +342,7 @@ func Test_processIpmi_alias_add_bad_ip(t *testing.T) {
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test notAnIPAddress"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
+		_testsFailed += 1
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 	closeDB()
@@ -358,6 +355,7 @@ func Test_processIpmi_alias_add(t *testing.T) {
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test 127.0.0.1"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
+		_testsFailed += 1
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 	closeDB()
@@ -377,6 +375,7 @@ func Test_processIpmi_alias_add_multi_than_list(t *testing.T) {
 	j = []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias"))
 	out = processIpmi(j)
 	if out != exemplaryJsonStr {
+		_testsFailed += 1
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 	//closeDB()
@@ -390,6 +389,7 @@ func Test_processIpmi_alias_show_nonexistent(t *testing.T) {
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias show test5"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
+		_testsFailed += 1
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 }
@@ -400,6 +400,7 @@ func Test_processIpmi_alias_show(t *testing.T) {
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias show test2"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
+		_testsFailed += 1
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 }
@@ -410,6 +411,7 @@ func Test_processIpmi_alias_del(t *testing.T) {
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias del test2"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
+		_testsFailed += 1
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 }
@@ -421,20 +423,36 @@ func Test_processIpmi_alias_del_nonexistent(t *testing.T) {
 	out := processIpmi(j)
 	//fmt.Println(out)
 	if out != exemplaryJsonStr {
+		_testsFailed += 1
 		t.Error("Resulting output doesn't match exemplary one")
+	}
+}
+
+func Test_unwrapAlias_existent(t *testing.T) {
+	trace()
+	ret := unwrapAlias("test3", "TestUser")
+	if ret != "172.16.0.1" {
+		_testsFailed += 1
+		t.Error("Resulting output doesn't match alias value")
+	}
+}
+
+func Test_unwrapAlias_nonexistent(t *testing.T) {
+	trace()
+	ret := unwrapAlias("test11", "TestUser")
+	if ret != "test11" {
+		_testsFailed += 1
+		t.Error("Resulting output doesn't match alias value")
 	}
 }
 
 func Test_stat(t *testing.T) {
 	closeDB()
 	os.Remove(_dbaddr)
-	/*
-			stat := fmt.Sprintf(`
-				Tests total:	%d
-				Tests passed:	%d
-				Tests failed:	%d
-		`,
-				_testsTotal, _testsTotal, _testsFailed, (_testsTotal - _testsPassed - _testsFailed))
-			fmt.Println(stat)
-	*/
+	stat := fmt.Sprintf(`
+	Total Tests:% 6d
+	Failures:% 9d
+`,
+		_testsTotal, _testsFailed)
+	fmt.Println(stat)
 }
