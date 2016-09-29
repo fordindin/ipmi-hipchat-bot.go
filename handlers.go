@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"net"
+	"strconv"
 )
 
+// function gets HTTP request body as []byte and returns handled JSON as string
+// basicaly, this function is central point of data processing
 func processIpmi(body []byte) string {
-
 	data := parseInputJson(body)
 	var logEntry dbLogEntry
 	var output string
@@ -14,12 +16,24 @@ func processIpmi(body []byte) string {
 	var out []execReturn
 	output = fmt.Sprintf("@%s,\n", data.name)
 
-	//log.Printf("Command %s received from %s\n", data.command, data.name)
 	switch data.command {
 	case "help":
 		output += help(data.args)
 		color = "purple"
 	case "last":
+		var ncommands int = 10
+		var err error
+		if len(data.args) > 0 {
+			ncommands, err = strconv.Atoi(data.args[0])
+			_ = ncommands
+			if err != nil {
+				output += fmt.Sprintf("'%s' doesn't look like a number to me", data.args[0])
+				color = "red"
+			}
+		}
+		if color != "red" {
+			output += last(ncommands)
+		}
 	case "reboot", "on", "off", "lanboot", "status":
 		switch {
 		case len(data.args) == 0:
@@ -83,6 +97,8 @@ func processIpmi(body []byte) string {
 		default:
 			output += help([]string{data.command})
 		}
+	default:
+		output += help([]string{data.command})
 	}
 
 	output = jsonFormatReply(color, output)
@@ -98,4 +114,28 @@ func processIpmi(body []byte) string {
 
 	logToDB(logEntry)
 	return output
+}
+
+// Returns help topic or general help, depending on input argument
+func help(args []string) string {
+	if len(args) == 1 {
+		if val, ok := topics[args[0]]; ok {
+			return val
+		}
+	}
+	return helpstr
+}
+
+// Returns last executed commands from the log
+func last(params ...int) string {
+	nentries := 10
+	if len(params) > 0 {
+		nentries = params[0]
+	}
+	lastEntries := lastFromDB(nentries)
+	out := "Last executed commands:\n"
+	for i, entry := range lastEntries {
+		out += fmt.Sprintf("% 2d % 12s: %s\n", i+1, entry.caller, entry.chatstring)
+	}
+	return out
 }
