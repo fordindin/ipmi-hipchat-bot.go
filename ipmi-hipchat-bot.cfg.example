@@ -1,0 +1,7 @@
+address:
+port:         8000
+pidfile:      ipmi-hipchat-gobot.pid
+logfile:      ipmi-hipchat-gobot.log
+workdir:      .
+ipmiusername: ADMIN
+ipmipassword: ADMIN

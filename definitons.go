@@ -1,5 +1,9 @@
 package main
 
+/*
+ * definitions of all static values, internal types and global variables
+ */
+
 import (
 	"flag"
 	"fmt"
@@ -7,26 +11,36 @@ import (
 	"os/exec"
 )
 
-var (
-	signal = flag.String("s", "", `send signal to the daemon
+var signal = flag.String("s", "", `send signal to the daemon
 		quit — graceful shutdown
 		stop — fast shutdown
 		reload — reloading the configuration file`)
-)
+var configPath string
 
 var listener net.Listener
 
 var daemonName = "ipmi-hipchat-gobot"
-var address string = ""
-var port int = 8000
+var processName = []string{fmt.Sprintf("[%s]", daemonName)}
 
-var pidfile = fmt.Sprintf("%s.pid", daemonName)
-var logfile = fmt.Sprintf("%s.log", daemonName)
-var workdir = "."
-var processName []string = []string{fmt.Sprintf("[%s]", daemonName)}
+type Config struct {
+	Address      string
+	Port         int
+	Pidfile      string
+	Logfile      string
+	Workdir      string
+	Ipmiusername string
+	Ipmipassword string
+}
 
-var ipmiUserame string = "ADMIN"
-var ipmiPassword string = "ADMIN"
+var config Config = Config{
+	Address:      "",
+	Port:         8000,
+	Pidfile:      fmt.Sprintf("%s.pid", daemonName),
+	Logfile:      fmt.Sprintf("%s.log", daemonName),
+	Workdir:      ".",
+	Ipmiusername: "ADMIN",
+	Ipmipassword: "ADMIN",
+}
 
 var commands = map[string][][]string{
 	"status": [][]string{[]string{"chassis", "power", "status"}},
