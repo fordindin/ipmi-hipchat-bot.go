@@ -340,11 +340,12 @@ func Test_mkDbAliasEntry_badAlias(t *testing.T) {
 func Test_processIpmi_alias(t *testing.T) {
 	trace()
 	initDB()
-	exemplaryJsonStr := `{"color":"green","message":"Aliases for you:\n","message_format":"text","notify":false}`
+	exemplaryJsonStr := `{"color":"green","message":"@TestUser,\nAliases for you:\n","message_format":"text","notify":false}`
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
 		_testsFailed += 1
+		fmt.Println(out, exemplaryJsonStr)
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 	closeDB()
@@ -354,7 +355,7 @@ func Test_processIpmi_alias(t *testing.T) {
 func Test_processIpmi_alias_add_bad_ip(t *testing.T) {
 	trace()
 	initDB()
-	exemplaryJsonStr := `{"color":"red","message":"'notAnIPAddress' doesn't look like IP-address to me\n","message_format":"text","notify":false}`
+	exemplaryJsonStr := `{"color":"red","message":"@TestUser,\n'notAnIPAddress' doesn't look like IP-address to me\n","message_format":"text","notify":false}`
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test notAnIPAddress"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
@@ -367,7 +368,7 @@ func Test_processIpmi_alias_add_bad_ip(t *testing.T) {
 func Test_processIpmi_alias_add(t *testing.T) {
 	trace()
 	initDB()
-	exemplaryJsonStr := `{"color":"green","message":"'test' is an alias for 127.0.0.1 (owner TestUser)","message_format":"text","notify":false}`
+	exemplaryJsonStr := `{"color":"green","message":"@TestUser,\n'test' is an alias for 127.0.0.1 (owner TestUser)","message_format":"text","notify":false}`
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test 127.0.0.1"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
@@ -381,7 +382,7 @@ func Test_processIpmi_alias_add(t *testing.T) {
 func Test_processIpmi_alias_add_multi_than_list(t *testing.T) {
 	trace()
 	initDB()
-	exemplaryJsonStr := `{"color":"green","message":"Aliases for you:\n'test' is an alias for 127.0.0.1 (owner TestUser)\n'test2' is an alias for 10.0.0.1 (owner TestUser)\n'test3' is an alias for 172.16.0.1 (owner TestUser)\n","message_format":"text","notify":false}`
+	exemplaryJsonStr := `{"color":"green","message":"@TestUser,\nAliases for you:\n'test' is an alias for 127.0.0.1 (owner TestUser)\n'test2' is an alias for 10.0.0.1 (owner TestUser)\n'test3' is an alias for 172.16.0.1 (owner TestUser)\n","message_format":"text","notify":false}`
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test 127.0.0.1"))
 	out := processIpmi(j)
 	j = []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias add test2 10.0.0.1"))
@@ -401,7 +402,7 @@ func Test_processIpmi_alias_add_multi_than_list(t *testing.T) {
 
 func Test_processIpmi_alias_show_nonexistent(t *testing.T) {
 	trace()
-	exemplaryJsonStr := `{"color":"red","message":"There is no alias 'test5' for TestUser\n","message_format":"text","notify":false}`
+	exemplaryJsonStr := `{"color":"red","message":"@TestUser,\nThere is no alias 'test5' for TestUser\n","message_format":"text","notify":false}`
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias show test5"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
@@ -412,7 +413,7 @@ func Test_processIpmi_alias_show_nonexistent(t *testing.T) {
 
 func Test_processIpmi_alias_show(t *testing.T) {
 	trace()
-	exemplaryJsonStr := `{"color":"green","message":"'test2' is an alias for 10.0.0.1 (owner TestUser)","message_format":"text","notify":false}`
+	exemplaryJsonStr := `{"color":"green","message":"@TestUser,\n'test2' is an alias for 10.0.0.1 (owner TestUser)","message_format":"text","notify":false}`
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias show test2"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
@@ -423,7 +424,7 @@ func Test_processIpmi_alias_show(t *testing.T) {
 
 func Test_processIpmi_alias_del(t *testing.T) {
 	trace()
-	exemplaryJsonStr := `{"color":"green","message":"Alias 'test2' removed (owner  TestUser)","message_format":"text","notify":false}`
+	exemplaryJsonStr := `{"color":"green","message":"@TestUser,\nAlias 'test2' removed (owner  TestUser)","message_format":"text","notify":false}`
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias del test2"))
 	out := processIpmi(j)
 	if out != exemplaryJsonStr {
@@ -434,7 +435,7 @@ func Test_processIpmi_alias_del(t *testing.T) {
 
 func Test_processIpmi_alias_del_nonexistent(t *testing.T) {
 	trace()
-	exemplaryJsonStr := `{"color":"red","message":"There is no alias 'test7' for TestUser\n","message_format":"text","notify":false}`
+	exemplaryJsonStr := `{"color":"red","message":"@TestUser,\nThere is no alias 'test7' for TestUser\n","message_format":"text","notify":false}`
 	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi alias del test7"))
 	out := processIpmi(j)
 	//fmt.Println(out)
@@ -459,6 +460,79 @@ func Test_unwrapAlias_nonexistent(t *testing.T) {
 	if ret != "test11" {
 		_testsFailed += 1
 		t.Error("Resulting output doesn't match alias value")
+	}
+}
+
+func Test_processIpmi_nonexistent(t *testing.T) {
+	trace()
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi add"))
+	out := processIpmi(j)
+	exemplaryOutput := `{"color":"green","message":"@TestUser,\nValid commands are:\n\t\thelp - list of help topics, for more information type /ipmi help \u003ctopic\u003e\n\t\treboot \u003cip or alias\u003e\n\t\toff \u003cip or alias\u003e\n\t\ton \u003cip or alias\u003e\n\t\tlanboot \u003cip or alias\u003e\n\t\tstatus \u003cip or alias\u003e\n\t\talias [ - | add | del | show ] [\u003calias name\u003e]\n\t\tlast [\u003cnumber\u003e]","message_format":"text","notify":false}`
+	if out != exemplaryOutput {
+		_testsFailed += 1
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+}
+
+func Test_processIpmi_last(t *testing.T) {
+	trace()
+	exemplaryOutput := `{"color":"green","message":"@TestUser,\nLast executed commands:\n 1     TestUser: /ipmi alias add test 127.0.0.1\n 2     TestUser: /ipmi alias add test2 10.0.0.1\n 3     TestUser: /ipmi alias add test3 172.16.0.1\n 4     TestUser: /ipmi alias \n 5     TestUser: /ipmi alias show test5\n 6     TestUser: /ipmi alias show test2\n 7     TestUser: /ipmi alias del test2\n 8     TestUser: /ipmi alias del test7\n 9     TestUser: /ipmi add \n","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi last"))
+	out := processIpmi(j)
+	if out != exemplaryOutput {
+		_testsFailed += 1
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+}
+
+func Test_processIpmi_last_2(t *testing.T) {
+	trace()
+	exemplaryOutput := `{"color":"green","message":"@TestUser,\nLast executed commands:\n 1     TestUser: /ipmi alias add test 127.0.0.1\n 2     TestUser: /ipmi alias add test2 10.0.0.1\n","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi last 2"))
+	out := processIpmi(j)
+	if out != exemplaryOutput {
+		_testsFailed += 1
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+}
+
+func Test_processIpmi_last_notANumber(t *testing.T) {
+	trace()
+	exemplaryOutput := `{"color":"red","message":"@TestUser,\n'NaN' doesn't look like a number to me","message_format":"text","notify":false}`
+	j := []byte(fmt.Sprintf(_jsonDataTemplate, "/ipmi last NaN"))
+	out := processIpmi(j)
+	if out != exemplaryOutput {
+		_testsFailed += 1
+		t.Error("Resulting output doesn't match exemplary one")
+	}
+}
+
+func Test_readConfig(t *testing.T) {
+	trace()
+	config.Ipmiusername = "TestUsername"
+	err := readConfig("ipmi-hipchat-bot.cfg.example")
+	if err != nil {
+		_testsFailed += 1
+		t.Error("Error reading default configuration file")
+	}
+	if config.Ipmiusername != "ADMIN" {
+		_testsFailed += 1
+		t.Error("Configuration parameter override failed")
+	}
+}
+
+func Test_readConfig_noConfigfile(t *testing.T) {
+	trace()
+	fmt.Println("Intended error messages:")
+	err := readConfig("nonexistent.config.file")
+	if err != nil {
+		if config.Ipmiusername != "ADMIN" {
+			_testsFailed += 1
+			t.Error("Default configuration settings failed")
+		}
+	} else {
+		_testsFailed += 1
+		t.Error("Should be nonexistent-file reading error")
 	}
 }
 
