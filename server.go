@@ -32,7 +32,9 @@ func (*httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func help(args []string) string {
 	if len(args) == 1 {
-		return topics[args[0]]
+		if val, ok := topics[args[0]]; ok {
+			return val
+		}
 	}
 	return helpstr
 }
