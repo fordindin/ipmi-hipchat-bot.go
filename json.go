@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// returns string representation of JSON reply
 func jsonFormatReply(color string, text string) string {
 	mapD := make(map[string]interface{})
 	mapD["color"] = color
@@ -17,6 +18,7 @@ func jsonFormatReply(color string, text string) string {
 	return string(data)
 }
 
+// converts input JSON into hipchatMessage struct
 func parseInputJson(data []byte) hipchatMessage {
 	var out hipchatMessage
 	var f interface{}

@@ -1,12 +1,17 @@
 package main
 
+/*
+ * Wrapper for os/exec
+ */
+
 import (
 	"fmt"
-	//"log"
 	"os/exec"
 	"strings"
 )
 
+// execCommand executes single system command, waits for it's completion
+// and returns result as struct execReturn
 func execCommand(command string, args ...string) execReturn {
 	cmd := exec.Command(command, args...)
 	err := cmd.Wait()
