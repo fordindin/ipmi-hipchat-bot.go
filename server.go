@@ -13,6 +13,7 @@ import (
 	"syscall"
 )
 
+// http server reader-writer
 func serveIpmi(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 	output := processIpmi(body)
@@ -30,20 +31,11 @@ func (*httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, help(make([]string, 0)))
 }
 
-func help(args []string) string {
-	if len(args) == 1 {
-		if val, ok := topics[args[0]]; ok {
-			return val
-		}
-	}
-	return helpstr
-}
-
 func worker() {
 	var addr string
 	var err error
 	initDB()
-	addr = fmt.Sprintf("%s:%d", address, port)
+	addr = fmt.Sprintf("%s:%d", config.Address, config.Port)
 	listener, err = net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal(err)
@@ -57,17 +49,22 @@ func worker() {
 }
 
 func main() {
+	flag.StringVar(&configPath, "c", "/etc/ipmi-hipchat-bot.cfg", "path to configuration file")
 	flag.Parse()
 	daemon.AddCommand(daemon.StringFlag(signal, "quit"), syscall.SIGQUIT, termHandler)
 	daemon.AddCommand(daemon.StringFlag(signal, "stop"), syscall.SIGTERM, termHandler)
 	daemon.AddCommand(daemon.StringFlag(signal, "reload"), syscall.SIGHUP, reloadHandler)
 
+	readConfig(configPath)
+	log.Println(config.Pidfile)
+	log.Println(configPath)
+
 	cntxt := &daemon.Context{
-		PidFileName: pidfile,
+		PidFileName: config.Pidfile,
 		PidFilePerm: 0644,
-		LogFileName: logfile,
+		LogFileName: config.Logfile,
 		LogFilePerm: 0640,
-		WorkDir:     workdir,
+		WorkDir:     config.Workdir,
 		Umask:       027,
 		Args:        processName,
 	}
