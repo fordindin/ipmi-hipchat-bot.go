@@ -18,7 +18,7 @@ func typeOf(in interface{}) {
 }
 
 func initDB() error {
-	db, err := sql.Open("sqlite3", dbaddr)
+	db, err := sql.Open("sqlite3", config.Dbpath)
 	if err != nil {
 		log.Fatal(err)
 	}
