@@ -30,6 +30,7 @@ type Config struct {
 	Workdir      string
 	Ipmiusername string
 	Ipmipassword string
+	Dbpath       string
 }
 
 var config Config = Config{
@@ -40,6 +41,7 @@ var config Config = Config{
 	Workdir:      ".",
 	Ipmiusername: "ADMIN",
 	Ipmipassword: "ADMIN",
+	Dbpath:       "./ipmibot.sqlite3",
 }
 
 var commands = map[string][][]string{
@@ -53,7 +55,6 @@ var commands = map[string][][]string{
 
 var ipmitool, ipmitoolBinErr = exec.LookPath("ipmitool")
 
-var dbaddr string = "./ipmibot.sqlite3"
 var dbversion = 0
 
 type execReturn struct {
