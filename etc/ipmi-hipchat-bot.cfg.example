@@ -1,0 +1,8 @@
+address:
+port:         8000
+pidfile:      /var/run/hipchatbot/ipmi-hipchat-gobot.pid
+logfile:      /var/log/hipchatbot/ipmi-hipchat-gobot.log
+workdir:      .
+ipmiusername: exampleUsername
+ipmipassword: examplePassword
+dbpath: /var/db/hipchatbot/ipmibot.sqlite3

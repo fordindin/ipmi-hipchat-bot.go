@@ -94,7 +94,7 @@ func trace() string {
 }
 
 func Test_initDB(t *testing.T) {
-	dbaddr = trace()
+	config.Dbpath = trace()
 	if DB != nil {
 		_testsFailed += 1
 		t.Error("DB should is not <nil> before initialization")
@@ -104,29 +104,29 @@ func Test_initDB(t *testing.T) {
 		_testsFailed += 1
 		t.Error("DB shouldn't be <nil> after initialization")
 	}
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 	//fmt.Println(reflect.TypeOf(DB))
 }
 
 func Test_closeDB(t *testing.T) {
-	dbaddr = trace()
+	config.Dbpath = trace()
 	initDB()
 	closeDB()
 	//fmt.Println(reflect.TypeOf(DB))
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 }
 
 func Test_createDB(t *testing.T) {
-	dbaddr = trace()
+	config.Dbpath = trace()
 	initDB()
 	//err = createDB()
 	closeDB()
 	//_ = err
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 }
 
 func Test_verifyDB(t *testing.T) {
-	dbaddr = trace()
+	config.Dbpath = trace()
 	dbversion = 65535
 	initDB()
 	//err := createDB()
@@ -138,11 +138,11 @@ func Test_verifyDB(t *testing.T) {
 	closeDB()
 	//_ = err
 	_ = ver
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 }
 
 func Test_verifyDB_nonexistent(t *testing.T) {
-	dbaddr = trace()
+	config.Dbpath = trace()
 	//initDB()
 	//err := createDB()
 	ver := verifyDB()
@@ -155,7 +155,7 @@ func Test_verifyDB_nonexistent(t *testing.T) {
 }
 
 func Test_logDB_lastFromDB_single(t *testing.T) {
-	dbaddr = trace()
+	config.Dbpath = trace()
 	initDB()
 	//err := createDB()
 	//_ = err
@@ -173,12 +173,12 @@ func Test_logDB_lastFromDB_single(t *testing.T) {
 		t.Error("Written log entry doesn't match")
 	}
 	closeDB()
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 	_testsPassed += 1
 }
 
 func Test_logDB_lastFromDB_many(t *testing.T) {
-	dbaddr = trace()
+	config.Dbpath = trace()
 	nentries := 20
 	initDB()
 	//err := createDB()
@@ -192,12 +192,12 @@ func Test_logDB_lastFromDB_many(t *testing.T) {
 		t.Error("Requested number of entries doesn't match")
 	}
 	closeDB()
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 	_testsPassed += 1
 }
 
 func Test_addAlias_showAlias(t *testing.T) {
-	dbaddr = trace()
+	config.Dbpath = trace()
 	initDB()
 	//err := createDB()
 	//_ = err
@@ -208,12 +208,12 @@ func Test_addAlias_showAlias(t *testing.T) {
 		t.Error("Created alias doesn't match template")
 	}
 	closeDB()
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 	_testsPassed += 1
 }
 
 func Test_addAlias_updateAlias(t *testing.T) {
-	dbaddr = trace()
+	config.Dbpath = trace()
 	initDB()
 	//err := createDB()
 	//_ = err
@@ -228,7 +228,7 @@ func Test_addAlias_updateAlias(t *testing.T) {
 		t.Error("Created alias doesn't match template")
 	}
 	closeDB()
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 	_testsPassed += 1
 }
 
@@ -349,7 +349,7 @@ func Test_processIpmi_alias(t *testing.T) {
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 	closeDB()
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 }
 
 func Test_processIpmi_alias_add_bad_ip(t *testing.T) {
@@ -363,7 +363,7 @@ func Test_processIpmi_alias_add_bad_ip(t *testing.T) {
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 	closeDB()
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 }
 func Test_processIpmi_alias_add(t *testing.T) {
 	trace()
@@ -376,7 +376,7 @@ func Test_processIpmi_alias_add(t *testing.T) {
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 	closeDB()
-	os.Remove(dbaddr)
+	os.Remove(config.Dbpath)
 }
 
 func Test_processIpmi_alias_add_multi_than_list(t *testing.T) {
@@ -396,8 +396,8 @@ func Test_processIpmi_alias_add_multi_than_list(t *testing.T) {
 		t.Error("Resulting output doesn't match exemplary one")
 	}
 	//closeDB()
-	//os.Remove(dbaddr)
-	_dbaddr = dbaddr
+	//os.Remove(config.Dbpath)
+	_dbaddr = config.Dbpath
 }
 
 func Test_processIpmi_alias_show_nonexistent(t *testing.T) {
@@ -510,12 +510,12 @@ func Test_processIpmi_last_notANumber(t *testing.T) {
 func Test_readConfig(t *testing.T) {
 	trace()
 	config.Ipmiusername = "TestUsername"
-	err := readConfig("ipmi-hipchat-bot.cfg.example")
+	err := readConfig("etc/ipmi-hipchat-bot.cfg.example")
 	if err != nil {
 		_testsFailed += 1
 		t.Error("Error reading default configuration file")
 	}
-	if config.Ipmiusername != "ADMIN" {
+	if config.Ipmiusername != "exampleUsername" {
 		_testsFailed += 1
 		t.Error("Configuration parameter override failed")
 	}
@@ -526,7 +526,7 @@ func Test_readConfig_noConfigfile(t *testing.T) {
 	fmt.Println("Intended error messages:")
 	err := readConfig("nonexistent.config.file")
 	if err != nil {
-		if config.Ipmiusername != "ADMIN" {
+		if config.Ipmiusername != "exampleUsername" {
 			_testsFailed += 1
 			t.Error("Default configuration settings failed")
 		}
