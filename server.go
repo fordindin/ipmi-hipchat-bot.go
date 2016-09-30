@@ -49,15 +49,17 @@ func worker() {
 }
 
 func main() {
-	flag.StringVar(&configPath, "c", "/etc/ipmi-hipchat-bot.cfg", "path to configuration file")
+	flag.StringVar(&configPath, "c", "/usr/local/etc/ipmi-hipchat-bot.cfg", "path to the configuration file")
 	flag.Parse()
 	daemon.AddCommand(daemon.StringFlag(signal, "quit"), syscall.SIGQUIT, termHandler)
 	daemon.AddCommand(daemon.StringFlag(signal, "stop"), syscall.SIGTERM, termHandler)
 	daemon.AddCommand(daemon.StringFlag(signal, "reload"), syscall.SIGHUP, reloadHandler)
 
 	readConfig(configPath)
-	log.Println(config.Pidfile)
-	log.Println(configPath)
+
+	if ipmitoolBinErr != nil {
+		log.Fatal("ipmitool error", ipmitoolBinErr)
+	}
 
 	cntxt := &daemon.Context{
 		PidFileName: config.Pidfile,
@@ -89,6 +91,9 @@ func main() {
 
 	log.Println("- - - - - - - - - - - - - - -")
 	log.Println("daemon started")
+	log.Printf("Configuration file: %s\n", configPath)
+	log.Printf("Pidfile: %s\n", config.Pidfile)
+	log.Printf("Database: %s\n", config.Dbpath)
 
 	go worker()
 

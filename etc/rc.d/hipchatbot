@@ -29,7 +29,7 @@ pidfile="/var/run/hipchatbot/hipchatbot.pid"
 stop_cmd=hipchatbot_stop
 
 hipchatbot_stop() {
-    ${command} -s stop
+    ${command} -c ${hipchatbot_config} -s stop
 }
 
 run_rc_command "$1"
