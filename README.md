@@ -25,6 +25,7 @@ workdir:      .
 ipmiusername: exampleUsername
 ipmipassword: examplePassword
 dbpath: /var/db/hipchatbot/ipmibot.sqlite3
+ipmitoolpath: /usr/local/etc/ipmitool
 ```
 
 # Startup

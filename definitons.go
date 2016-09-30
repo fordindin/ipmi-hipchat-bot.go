@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"net"
-	"os/exec"
 )
 
 var signal = flag.String("s", "", `send signal to the daemon
@@ -16,6 +15,9 @@ var signal = flag.String("s", "", `send signal to the daemon
 		stop — fast shutdown
 		reload — reloading the configuration file`)
 var configPath string
+
+var ipmitool string
+var ipmitoolBinErr error
 
 var listener net.Listener
 
@@ -31,6 +33,7 @@ type Config struct {
 	Ipmiusername string
 	Ipmipassword string
 	Dbpath       string
+	Ipmitoolpath string
 }
 
 var config Config = Config{
@@ -42,6 +45,7 @@ var config Config = Config{
 	Ipmiusername: "ADMIN",
 	Ipmipassword: "ADMIN",
 	Dbpath:       "./ipmibot.sqlite3",
+	Ipmitoolpath: "/usr/local/bin/ipmitool",
 }
 
 var commands = map[string][][]string{
@@ -52,8 +56,6 @@ var commands = map[string][][]string{
 	"lanboot": [][]string{[]string{"chassis", "bootdev", "pxe"},
 		[]string{"chassis", "power", "cycle"}},
 }
-
-var ipmitool, ipmitoolBinErr = exec.LookPath("ipmitool")
 
 var dbversion = 0
 

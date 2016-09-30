@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"syscall"
 )
 
@@ -57,6 +58,7 @@ func main() {
 
 	readConfig(configPath)
 
+	ipmitool, ipmitoolBinErr = exec.LookPath(config.Ipmitoolpath)
 	if ipmitoolBinErr != nil {
 		log.Fatal("ipmitool error", ipmitoolBinErr)
 	}
